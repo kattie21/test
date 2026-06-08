@@ -53,6 +53,17 @@ local cloneref = cloneref or clonereference or function(inst) return inst end
 local ProtectGui = protectgui or (syn and syn.protect_gui) or function() end
 local GUIParent = gethui and gethui() or cloneref(game:GetService("CoreGui"))
 
+-- DEBUG: print which exploit functions are available
+print("[Reconnect] cloneref    =", cloneref ~= nil and (cloneref == (clonereference or cloneref) and "executor" or "fallback") or "NIL")
+print("[Reconnect] protectgui  =", protectgui ~= nil and "EXISTS" or "NIL (fallback used)")
+print("[Reconnect] gethui      =", gethui ~= nil and "EXISTS" or "NIL (CoreGui fallback)")
+print("[Reconnect] request     =", request ~= nil and "EXISTS" or "NIL")
+print("[Reconnect] http_request=", http_request ~= nil and "EXISTS" or "NIL")
+print("[Reconnect] syn         =", syn ~= nil and "EXISTS" or "NIL")
+print("[Reconnect] getgenv     =", getgenv ~= nil and "EXISTS" or "NIL")
+print("[Reconnect] writefile   =", writefile ~= nil and "EXISTS" or "NIL")
+print("[Reconnect] GUIParent   =", tostring(GUIParent))
+
 -- ============================================================
 -- PHASE 1: SERVICES (cloneref-wrapped)
 -- ============================================================
