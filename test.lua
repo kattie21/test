@@ -43,7 +43,7 @@
 --     StatusAPIKey            = "b906a02220b641dd835ce9053fd30b54",   -- must match API_KEY env var
 --     StatusAPIInterval       = 30,             -- seconds between API heartbeats
 -- }
--- loadstring(game:HttpGet("URL"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/kattie21/test/refs/heads/main/test.lua"))()
 
 -- ============================================================
 -- PHASE 1: ANTI-DETECTION WRAPPERS (WindUI-style)
@@ -205,8 +205,8 @@ local Config = {
     BlackScreen             = getConfigValue("BlackScreen", false),
     -- Status API
     StatusAPIEnabled        = getConfigValue("StatusAPIEnabled", true),
-    StatusAPIURL            = getConfigValue("StatusAPIURL", "http://localhost:8080"),
-    StatusAPIKey            = getConfigValue("StatusAPIKey", "your-secret-api-key"),
+    StatusAPIURL            = getConfigValue("StatusAPIURL", "https://misc.reconnect-tool.tech"),
+    StatusAPIKey            = getConfigValue("StatusAPIKey", "b906a02220b641dd835ce9053fd30b54"),
     StatusAPIInterval       = getConfigValue("StatusAPIInterval", 30),
 }
 
