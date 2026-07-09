@@ -35,7 +35,7 @@
 --     -- Display
 --     BlackScreen             = false,         -- black overlay mode
 -- }
--- loadstring(game:HttpGet("URL"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/kattie21/test/main/test2.lua"))()
 
 -- ============================================================
 -- PHASE 1: ANTI-DETECTION WRAPPERS (WindUI-style)
@@ -840,8 +840,6 @@ end
 
 -- Variants whose Size is always scale/formula-driven (never swapped to
 -- AutomaticSize after creation) — safe to auto-attach a synced drop shadow.
-local SHADOW_SAFE_VARIANTS = { window = true, sidebar = true, topbar = true }
-
 local function glass(parent, variant, props)
     props = props or {}
     local bgMap = {
@@ -855,35 +853,16 @@ local function glass(parent, variant, props)
     }
     local style = bgMap[variant] or bgMap.card
 
-    local frameSize     = props.Size or UDim2.new(1, 0, 1, 0)
-    local framePosition = props.Position or UDim2.new(0, 0, 0, 0)
-    local frameAnchor   = props.Anchor or Vector2.new(0, 0)
-    local frameZIndex   = props.ZIndex or 1
-
-    if props.Shadow or (props.Shadow == nil and SHADOW_SAFE_VARIANTS[variant]) then
-        local shadow = new("Frame", {
-            Name                   = (props.Name or (variant .. "Glass")) .. "Shadow",
-            BackgroundColor3       = Color3.fromRGB(0, 0, 0),
-            BackgroundTransparency = variant == "window" and 0.4 or 0.6,
-            Size                   = frameSize,
-            Position               = framePosition + UDim2.new(0, 0, 0, variant == "window" and 12 or 5),
-            AnchorPoint            = frameAnchor,
-            ZIndex                 = math.max(frameZIndex - 1, 0),
-            Parent                 = parent,
-        })
-        corner(shadow, props.Radius or Theme.R_LG)
-    end
-
     local frame = new("Frame", {
         Name                   = props.Name or (variant .. "Glass"),
         BackgroundColor3       = props.Bg or style.bg,
         BackgroundTransparency = props.Trans or style.trans,
-        Size                   = frameSize,
-        Position               = framePosition,
-        AnchorPoint            = frameAnchor,
+        Size                   = props.Size or UDim2.new(1, 0, 1, 0),
+        Position               = props.Position or UDim2.new(0, 0, 0, 0),
+        AnchorPoint            = props.Anchor or Vector2.new(0, 0),
         ClipsDescendants       = props.Clip ~= false,
         LayoutOrder            = props.Order or 0,
-        ZIndex                 = frameZIndex,
+        ZIndex                 = props.ZIndex or 1,
         Visible                = props.Visible ~= false,
         Parent                 = parent,
     })
@@ -902,20 +881,6 @@ local function glass(parent, variant, props)
             Color    = ColorSequence.new(lerpColor(baseColor, Color3.new(1, 1, 1), 0.06), baseColor),
             Rotation = 105,
             Parent   = frame,
-        })
-    end
-
-    -- Faint top-edge highlight — light catching the rim of the glass panel.
-    if variant == "window" then
-        new("Frame", {
-            Name                   = "TopHighlight",
-            BackgroundColor3       = Color3.fromRGB(255, 255, 255),
-            BackgroundTransparency = 0.85,
-            Size                   = UDim2.new(1, -32, 0, 1),
-            Position               = UDim2.new(0, 16, 0, 1),
-            BorderSizePixel        = 0,
-            ZIndex                 = frameZIndex + 1,
-            Parent                 = frame,
         })
     end
 
@@ -1368,19 +1333,6 @@ local TopBar = glass(Window, "topbar", {
     ZIndex   = 10,
 })
 TopBar.BackgroundTransparency = 0.12
-
--- Brand-gradient hairline separating the top bar from its contents below
-local topBarEdge = new("Frame", {
-    Name                   = "Edge",
-    BackgroundColor3       = Theme.GradStart,
-    BackgroundTransparency = 0.55,
-    Size                   = UDim2.new(1, -24, 0, 1),
-    Position               = UDim2.new(0, 12, 1, -1),
-    BorderSizePixel        = 0,
-    ZIndex                 = 11,
-    Parent                 = TopBar,
-})
-applyGradient(topBarEdge, Theme.GradStart, Theme.GradEnd, 0)
 
 -- Make topbar draggable
 TopBar.InputBegan:Connect(onDragStart)
@@ -2650,31 +2602,55 @@ addButton(dangerSection, {
 -- PHASE 9: FLOATING OPEN BUTTON (Logo image)
 -- ============================================================
 
+local OB_SIZE = 44
+
+-- Soft brand glow behind the button. Kept as a ScreenGui sibling (not a
+-- child of OpenButton) and synced manually on drag, since addRipple()
+-- below turns on ClipsDescendants for the button itself, which would
+-- otherwise clip the glow's bleed.
+local obGlow = new("Frame", {
+    Name                   = "OpenButtonGlow",
+    BackgroundColor3       = Theme.Primary,
+    BackgroundTransparency = 0.8,
+    Size                   = UDim2.new(0, OB_SIZE + 14, 0, OB_SIZE + 14),
+    AnchorPoint            = Vector2.new(0.5, 0.5),
+    Position               = UDim2.new(0, 14 + OB_SIZE / 2, 0, 50 + OB_SIZE / 2),
+    ZIndex                 = 199,
+    Parent                 = ScreenGui,
+})
+corner(obGlow, 18)
+
 local OpenButton = new("TextButton", {
     Name = "OpenButton",
-    BackgroundTransparency = 1,
-    Size = UDim2.new(0, 36, 0, 36),
+    BackgroundColor3 = Theme.BgElevated,
+    BackgroundTransparency = 0.05,
+    Size = UDim2.new(0, OB_SIZE, 0, OB_SIZE),
     Position = UDim2.new(0, 14, 0, 50),
     Text = "", AutoButtonColor = false,
     ZIndex = 200, Parent = ScreenGui,
 })
-stroke(OpenButton, Theme.Primary, 0.5, 1)
-corner(OpenButton, 6)
+corner(OpenButton, 14)
+stroke(OpenButton, Theme.Primary, 0.35, 1.5)
+applyGradient(OpenButton, lerpColor(Theme.BgElevated, Color3.new(1, 1, 1), 0.08), Theme.BgElevated, 105)
 
--- Full logo image fills button
+-- Logo image, inset from the edges instead of touching the button border
 new("ImageLabel", {
-    Name = "Logo", BackgroundTransparency = 1,
-    Size = UDim2.new(1, 0, 1, 0),
-    Image = LogoImage, ScaleType = Enum.ScaleType.Fit,
-    ZIndex = 201, Parent = OpenButton,
+    Name        = "Logo", BackgroundTransparency = 1,
+    Size        = UDim2.new(1, -10, 1, -10),
+    Position    = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Image       = LogoImage, ScaleType = Enum.ScaleType.Fit,
+    ZIndex      = 201, Parent = OpenButton,
 })
 
--- Hover (simple transparency only, no size change)
+-- Hover: brighten the chip + intensify the glow
 OpenButton.MouseEnter:Connect(function()
-    OpenButton.BackgroundTransparency = 0
+    tween(OpenButton, TI_FAST, { BackgroundTransparency = 0 })
+    tween(obGlow, TI_FAST, { BackgroundTransparency = 0.55 })
 end)
 OpenButton.MouseLeave:Connect(function()
-    OpenButton.BackgroundTransparency = 0.15
+    tween(OpenButton, TI_FAST, { BackgroundTransparency = 0.05 })
+    tween(obGlow, TI_FAST, { BackgroundTransparency = 0.8 })
 end)
 
 -- Click to toggle
@@ -2704,6 +2680,10 @@ UserInputService.InputChanged:Connect(function(input)
             OpenButton.Position = UDim2.new(
                 obStartPos.X.Scale, obStartPos.X.Offset + delta.X,
                 obStartPos.Y.Scale, obStartPos.Y.Offset + delta.Y
+            )
+            obGlow.Position = UDim2.new(
+                obStartPos.X.Scale, obStartPos.X.Offset + delta.X + OB_SIZE / 2,
+                obStartPos.Y.Scale, obStartPos.Y.Offset + delta.Y + OB_SIZE / 2
             )
         end
     end
