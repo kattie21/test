@@ -2606,14 +2606,17 @@ local OB_SIZE = 44
 
 local OpenButton = new("TextButton", {
     Name = "OpenButton",
-    BackgroundTransparency = 1,
+    BackgroundColor3 = Theme.BgElevated,
+    BackgroundTransparency = 0.1,
     Size = UDim2.new(0, OB_SIZE, 0, OB_SIZE),
     Position = UDim2.new(0, 14, 0, 50),
     Text = "", AutoButtonColor = false,
     ZIndex = 200, Parent = ScreenGui,
 })
+corner(OpenButton, 14)
+stroke(OpenButton, Theme.Primary, 0.35, 1.5)
 
--- Full logo image fills the button — no extra chip/border/glow
+-- Full logo image fills the button
 new("ImageLabel", {
     Name   = "Logo", BackgroundTransparency = 1,
     Size   = UDim2.new(1, 0, 1, 0),
