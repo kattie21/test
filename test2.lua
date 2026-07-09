@@ -2604,54 +2604,22 @@ addButton(dangerSection, {
 
 local OB_SIZE = 44
 
--- Soft brand glow behind the button. Kept as a ScreenGui sibling (not a
--- child of OpenButton) and synced manually on drag, since addRipple()
--- below turns on ClipsDescendants for the button itself, which would
--- otherwise clip the glow's bleed.
-local obGlow = new("Frame", {
-    Name                   = "OpenButtonGlow",
-    BackgroundColor3       = Theme.Primary,
-    BackgroundTransparency = 0.8,
-    Size                   = UDim2.new(0, OB_SIZE + 14, 0, OB_SIZE + 14),
-    AnchorPoint            = Vector2.new(0.5, 0.5),
-    Position               = UDim2.new(0, 14 + OB_SIZE / 2, 0, 50 + OB_SIZE / 2),
-    ZIndex                 = 199,
-    Parent                 = ScreenGui,
-})
-corner(obGlow, 18)
-
 local OpenButton = new("TextButton", {
     Name = "OpenButton",
-    BackgroundColor3 = Theme.BgElevated,
-    BackgroundTransparency = 0.05,
+    BackgroundTransparency = 1,
     Size = UDim2.new(0, OB_SIZE, 0, OB_SIZE),
     Position = UDim2.new(0, 14, 0, 50),
     Text = "", AutoButtonColor = false,
     ZIndex = 200, Parent = ScreenGui,
 })
-corner(OpenButton, 14)
-stroke(OpenButton, Theme.Primary, 0.35, 1.5)
-applyGradient(OpenButton, lerpColor(Theme.BgElevated, Color3.new(1, 1, 1), 0.08), Theme.BgElevated, 105)
 
--- Logo image, inset from the edges instead of touching the button border
+-- Full logo image fills the button — no extra chip/border/glow
 new("ImageLabel", {
-    Name        = "Logo", BackgroundTransparency = 1,
-    Size        = UDim2.new(1, -10, 1, -10),
-    Position    = UDim2.new(0.5, 0, 0.5, 0),
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    Image       = LogoImage, ScaleType = Enum.ScaleType.Fit,
-    ZIndex      = 201, Parent = OpenButton,
+    Name   = "Logo", BackgroundTransparency = 1,
+    Size   = UDim2.new(1, 0, 1, 0),
+    Image  = LogoImage, ScaleType = Enum.ScaleType.Fit,
+    ZIndex = 201, Parent = OpenButton,
 })
-
--- Hover: brighten the chip + intensify the glow
-OpenButton.MouseEnter:Connect(function()
-    tween(OpenButton, TI_FAST, { BackgroundTransparency = 0 })
-    tween(obGlow, TI_FAST, { BackgroundTransparency = 0.55 })
-end)
-OpenButton.MouseLeave:Connect(function()
-    tween(OpenButton, TI_FAST, { BackgroundTransparency = 0.05 })
-    tween(obGlow, TI_FAST, { BackgroundTransparency = 0.8 })
-end)
 
 -- Click to toggle
 OpenButton.MouseButton1Click:Connect(function()
@@ -2680,10 +2648,6 @@ UserInputService.InputChanged:Connect(function(input)
             OpenButton.Position = UDim2.new(
                 obStartPos.X.Scale, obStartPos.X.Offset + delta.X,
                 obStartPos.Y.Scale, obStartPos.Y.Offset + delta.Y
-            )
-            obGlow.Position = UDim2.new(
-                obStartPos.X.Scale, obStartPos.X.Offset + delta.X + OB_SIZE / 2,
-                obStartPos.Y.Scale, obStartPos.Y.Offset + delta.Y + OB_SIZE / 2
             )
         end
     end
