@@ -2608,7 +2608,7 @@ local OpenButton = new("TextButton", {
     Name = "OpenButton",
     BackgroundTransparency = 1,
     Size = UDim2.new(0, OB_SIZE, 0, OB_SIZE),
-    Position = UDim2.new(0, 14, 0, 50),
+    Position = UDim2.new(0, 14, 0, 75),
     Text = "", AutoButtonColor = false,
     ZIndex = 200, Parent = ScreenGui,
 })
