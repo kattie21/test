@@ -291,75 +291,12 @@ end
 -- PHASE 1: FILE OPS / LOGGING
 -- ============================================================
 
-local function safeWriteFile(filename, data)
-    local ok = pcall(function()
-        if not writefile or not makefolder or not isfolder then return end
-        if not isfolder("ReconnectX") then makefolder("ReconnectX") end
-        writefile("ReconnectX/" .. filename, data)
-    end)
-    return ok
-end
-
-local function safeReadFile(filename)
-    local ok, result = pcall(function()
-        if not readfile or not isfile then return nil end
-        local path = "ReconnectX/" .. filename
-        return isfile(path) and readfile(path) or nil
-    end)
-    return ok and result or nil
-end
-
-local SETTINGS_FILE = "reconnect_settings.json"
-
-local SAVE_KEYS = {
-    "ShowUI", "BypassPlayerLoading",
-    "AntiKick", "AntiIdle", "AutoRejoin", "RejoinDelay",
-    "FPSLockEnabled", "FPSLockValue", "MapOptimization", "OptimizationLevel",
-    "HeartbeatEnabled", "ShowFPS",
-    "UpdateInterval",
-    "BlackScreen",
-}
-
-local function saveSettings()
-    pcall(function()
-        local data = {}
-        for _, key in ipairs(SAVE_KEYS) do
-            data[key] = Config[key]
-        end
-        safeWriteFile(SETTINGS_FILE, HttpService:JSONEncode(data))
-    end)
-end
-
--- A key explicitly passed in getgenv().ReconnectConfig (or getgenv() directly)
--- for THIS run always wins over whatever was persisted from a previous
--- session's in-game toggle — otherwise a stale saved value silently
--- overrides the autoexecute config and makes it look like the config
--- option "does nothing".
-local function isExplicitlyConfigured(key)
-    if getgenv then
-        if getgenv().ReconnectConfig and getgenv().ReconnectConfig[key] ~= nil then
-            return true
-        end
-        if getgenv()[key] ~= nil then return true end
-    end
-    return false
-end
-
-local function loadSettings()
-    pcall(function()
-        local raw = safeReadFile(SETTINGS_FILE)
-        if not raw then return end
-        local data = HttpService:JSONDecode(raw)
-        if type(data) ~= "table" then return end
-        for _, key in ipairs(SAVE_KEYS) do
-            if data[key] ~= nil and not isExplicitlyConfigured(key) then
-                Config[key] = data[key]
-            end
-        end
-    end)
-end
-
-loadSettings()
+-- Settings are data-only, sourced entirely from getgenv().ReconnectConfig
+-- (the autoexecute config) — no local reconnect_settings.json persistence
+-- and no in-game toggle can change them. To change a setting, edit the
+-- autoexecute script's ReconnectConfig table and restart; reconnect_termux's
+-- own Settings tab is the other place these values are configured for the
+-- session's script generation.
 
 -- ============================================================
 -- PHASE 1: WEBHOOK NOTIFICATIONS
@@ -1885,22 +1822,24 @@ end
 switchTab("Dashboard")
 
 -- ============================================================
--- PHASE 7: TOGGLE SWITCH
+-- PHASE 7: SETTINGS DATA ROW (read-only — no in-game toggle)
 -- ============================================================
+-- Settings are data-only, sourced from getgenv().ReconnectConfig (autoexecute)
+-- and reconnect_termux. There is no interactive toggle/dropdown in-game.
 
-local function addToggle(parent, props)
+-- Read-only settings row — icon/label/desc layout with a static value badge.
+-- value is a plain static badge instead of an interactive switch. Settings
+-- are data-only (sourced from getgenv().ReconnectConfig / reconnect_termux),
+-- not changeable in-game, so there is nothing here to click.
+local function addDataRow(parent, props)
     props = props or {}
-    local enabled = props.Default or false
-    local TRACK_W, TRACK_H = 44, 24
-    local KNOB_SIZE, KNOB_PAD = 18, 3
 
     local row = new("Frame", {
-        Name = props.Name or "ToggleRow", BackgroundTransparency = 1,
+        Name = props.Name or "DataRow", BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 0, 40),
         LayoutOrder = props.Order or 0, Parent = parent,
     })
 
-    -- Icon (image-based)
     if props.Icon then
         local ib = iconBox(row, props.Icon, props.IconColor or Theme.BgCard, 32, 14)
         ib.Position = UDim2.new(0, 0, 0.5, -16)
@@ -1908,54 +1847,29 @@ local function addToggle(parent, props)
 
     local labelOffset = props.Icon and 40 or 0
     label(row, {
-        Text = props.Label or "Toggle", Font = Theme.FontMed, Size = 13, Color = Theme.Text,
-        FrameSize = UDim2.new(1, -(TRACK_W + labelOffset + 16), 0, 20),
+        Text = props.Label or "Setting", Font = Theme.FontMed, Size = 13, Color = Theme.Text,
+        FrameSize = UDim2.new(1, -(labelOffset + 90), 0, 20),
         Position = UDim2.new(0, labelOffset, 0, 4),
     })
 
     if props.Desc then
         label(row, {
             Text = props.Desc, Font = Theme.Font, Size = 11, Color = Theme.TextMuted,
-            FrameSize = UDim2.new(1, -(TRACK_W + labelOffset + 16), 0, 16),
+            FrameSize = UDim2.new(1, -(labelOffset + 90), 0, 16),
             Position = UDim2.new(0, labelOffset, 0, 22),
         })
         row.Size = UDim2.new(1, 0, 0, 48)
     end
 
-    local track = new("TextButton", {
-        Name = "Track",
-        BackgroundColor3 = enabled and Theme.ToggleOn or Theme.ToggleOff,
-        BackgroundTransparency = 0,
-        Size = UDim2.new(0, TRACK_W, 0, TRACK_H),
-        Position = UDim2.new(1, -TRACK_W, 0.5, -TRACK_H / 2),
-        Text = "", AutoButtonColor = false, Parent = row,
-    })
-    corner(track, UDim.new(1, 0))
+    local isBool = type(props.Value) == "boolean"
+    local text = isBool and (props.Value and "ON" or "OFF") or tostring(props.Value)
+    local color = props.ValueColor or (isBool and (props.Value and Theme.Success or Theme.TextMuted) or Theme.Primary)
 
-    local knob = new("Frame", {
-        Name = "Knob",
-        BackgroundColor3 = Theme.ToggleKnob, BackgroundTransparency = 0,
-        Size = UDim2.new(0, KNOB_SIZE, 0, KNOB_SIZE),
-        Position = enabled
-            and UDim2.new(1, -(KNOB_SIZE + KNOB_PAD), 0.5, -KNOB_SIZE / 2)
-            or  UDim2.new(0, KNOB_PAD, 0.5, -KNOB_SIZE / 2),
-        Parent = track,
-    })
-    corner(knob, UDim.new(1, 0))
+    local bg = badge(row, text, color, { Size = UDim2.new(0, 0, 0, 22) })
+    bg.AnchorPoint = Vector2.new(1, 0.5)
+    bg.Position = UDim2.new(1, 0, 0, 14)
 
-    local function setToggle(state, silent)
-        enabled = state
-        tween(track, TI_SPRING, { BackgroundColor3 = enabled and Theme.ToggleOn or Theme.ToggleOff })
-        tween(knob, TI_SPRING, {
-            Position = enabled
-                and UDim2.new(1, -(KNOB_SIZE + KNOB_PAD), 0.5, -KNOB_SIZE / 2)
-                or  UDim2.new(0, KNOB_PAD, 0.5, -KNOB_SIZE / 2)
-        })
-        if not silent and props.Callback then props.Callback(enabled) end
-    end
-
-    track.MouseButton1Click:Connect(function() setToggle(not enabled) end)
-    return row, setToggle, function() return enabled end
+    return row
 end
 
 -- ============================================================
@@ -2013,151 +1927,6 @@ local function addButton(parent, props)
     addRipple(btn)
     if props.Callback then btn.MouseButton1Click:Connect(props.Callback) end
     return btn
-end
-
--- ============================================================
--- PHASE 7: DROPDOWN (Fixed: popup on ScreenGui, high ZIndex)
--- ============================================================
-
-local function addDropdown(parent, props)
-    props = props or {}
-    local options  = props.Options or {"Option 1", "Option 2"}
-    local selected = props.Default or options[1]
-    local isOpen   = false
-
-    local row = new("Frame", {
-        Name = props.Name or "DropdownRow", BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 40),
-        LayoutOrder = props.Order or 0, ZIndex = 20, Parent = parent,
-    })
-
-    if props.Label then
-        label(row, {
-            Text = props.Label, Font = Theme.FontMed, Size = 13, Color = Theme.Text,
-            FrameSize = UDim2.new(0.5, 0, 1, 0), AlignX = Enum.TextXAlignment.Left,
-        })
-    end
-
-    local trigger = new("TextButton", {
-        Name = "Trigger",
-        BackgroundColor3 = Color3.fromRGB(51, 65, 85), BackgroundTransparency = 0.7,
-        Size = UDim2.new(0, 150, 0, 32),
-        Position = UDim2.new(1, -150, 0.5, -16),
-        Text = "", AutoButtonColor = false, ZIndex = 21, Parent = row,
-    })
-    corner(trigger, 8)
-    stroke(trigger, Color3.fromRGB(71, 85, 105), 0.7)
-
-    local selectedLabel = label(trigger, {
-        Text = selected, Font = Theme.FontMed, Size = 12, Color = Theme.TextSub,
-        FrameSize = UDim2.new(1, -28, 1, 0), Position = UDim2.new(0, 10, 0, 0),
-        AlignX = Enum.TextXAlignment.Left, ZIndex = 22,
-    })
-
-    local chevron = label(trigger, {
-        Text = "v", Font = Theme.FontBold, Size = 10, Color = Theme.TextMuted,
-        FrameSize = UDim2.new(0, 20, 1, 0), Position = UDim2.new(1, -22, 0, 0),
-        AlignX = Enum.TextXAlignment.Center, ZIndex = 22,
-    })
-
-    -- Popup parented to ScreenGui to avoid clipping
-    local popup = glass(ScreenGui, "overlay", {
-        Name     = "DropdownPopup",
-        Size     = UDim2.new(0, 150, 0, #options * 30 + 8),
-        Position = UDim2.new(0, 0, 0, 0),
-        Radius   = Theme.R_MD,
-        ZIndex   = 500,
-        Visible  = false,
-    })
-    popup.BackgroundTransparency = 0.02
-    pad(popup, 4, 4, 4, 4)
-    uiList(popup, Enum.FillDirection.Vertical, 2)
-
-    local optionButtons = {}
-
-    for i, opt in ipairs(options) do
-        local optBtn = new("TextButton", {
-            Name = "Opt_" .. opt,
-            BackgroundColor3 = Theme.ActiveBg,
-            BackgroundTransparency = (opt == selected) and Theme.ActiveBgTrans or 1,
-            Size = UDim2.new(1, 0, 0, 28),
-            Text = opt, TextSize = 12,
-            Font = (opt == selected) and Theme.FontSB or Theme.Font,
-            TextColor3 = (opt == selected) and Theme.Text or Theme.TextSub,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            AutoButtonColor = false, LayoutOrder = i,
-            ZIndex = 501, Parent = popup,
-        })
-        corner(optBtn, 6)
-        pad(optBtn, 0, 0, 10, 0)
-        table.insert(optionButtons, optBtn)
-
-        optBtn.MouseEnter:Connect(function()
-            if opt ~= selected then tween(optBtn, TI_FAST, { BackgroundTransparency = 0.9 }) end
-        end)
-        optBtn.MouseLeave:Connect(function()
-            if opt ~= selected then tween(optBtn, TI_FAST, { BackgroundTransparency = 1 }) end
-        end)
-
-        optBtn.MouseButton1Click:Connect(function()
-            selected = opt
-            selectedLabel.Text = opt
-            for _, child in ipairs(optionButtons) do
-                local isThis = (child.Text == opt)
-                tween(child, TI_FAST, {
-                    BackgroundTransparency = isThis and Theme.ActiveBgTrans or 1,
-                    TextColor3 = isThis and Theme.Text or Theme.TextSub,
-                })
-                child.Font = isThis and Theme.FontSB or Theme.Font
-            end
-            isOpen = false
-            popup.Visible = false
-            chevron.Text = "v"
-            if props.Callback then props.Callback(opt) end
-        end)
-    end
-
-    -- Toggle popup and position it at trigger's absolute position
-    trigger.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
-        if isOpen then
-            local absPos = trigger.AbsolutePosition
-            local absSize = trigger.AbsoluteSize
-            popup.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 4)
-            popup.Size = UDim2.new(0, absSize.X, 0, #options * 30 + 8)
-        end
-        popup.Visible = isOpen
-        chevron.Text = isOpen and "^" or "v"
-    end)
-
-    -- Close popup when clicking elsewhere
-    local closeConn
-    closeConn = UserInputService.InputBegan:Connect(function(input)
-        if not isOpen then return end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            task.defer(function()
-                if isOpen then
-                    local mouse = UserInputService:GetMouseLocation()
-                    local pPos = popup.AbsolutePosition
-                    local pSize = popup.AbsoluteSize
-                    local tPos = trigger.AbsolutePosition
-                    local tSize = trigger.AbsoluteSize
-                    -- Check if click is outside both popup and trigger
-                    local inPopup = mouse.X >= pPos.X and mouse.X <= pPos.X + pSize.X and
-                                    mouse.Y >= pPos.Y and mouse.Y <= pPos.Y + pSize.Y
-                    local inTrigger = mouse.X >= tPos.X and mouse.X <= tPos.X + tSize.X and
-                                      mouse.Y >= tPos.Y and mouse.Y <= tPos.Y + tSize.Y
-                    if not inPopup and not inTrigger then
-                        isOpen = false
-                        popup.Visible = false
-                        chevron.Text = "v"
-                    end
-                end
-            end)
-        end
-    end)
-
-    return row, function() return selected end
 end
 
 -- ============================================================
@@ -2363,50 +2132,28 @@ addPageHeader(ProtectionPage, "Protection", "Shield your session from disconnect
 
 local protectSection = addSection(ProtectionPage, "Session Protection", { Order = 1, Spacing = 4 })
 
-local _, setAntiKick = addToggle(protectSection, {
+addDataRow(protectSection, {
     Label = "Anti-Kick", Desc = "Prevent server-side kicks",
     Icon = Icons.Shield, IconColor = Theme.Primary,
-    Default = Config.AntiKick, Order = 1,
-    Callback = function(v)
-        Config.AntiKick = v; saveSettings()
-        if v then setupAntiKick() end
-        notify(v and "Enabled" or "Disabled", "Anti-Kick " .. (v and "activated" or "deactivated"), v and "success" or "info", 2)
-    end,
+    Value = Config.AntiKick, Order = 1,
 })
 
-local _, setAntiIdle = addToggle(protectSection, {
+addDataRow(protectSection, {
     Label = "Anti-Idle", Desc = "Prevent AFK disconnection",
     Icon = Icons.Clock, IconColor = Theme.Info,
-    Default = Config.AntiIdle, Order = 2,
-    Callback = function(v)
-        Config.AntiIdle = v; saveSettings()
-        if v then setupAntiIdle() end
-        notify(v and "Enabled" or "Disabled", "Anti-Idle " .. (v and "activated" or "deactivated"), v and "success" or "info", 2)
-    end,
+    Value = Config.AntiIdle, Order = 2,
 })
 
-local _, setAutoRejoin = addToggle(protectSection, {
+addDataRow(protectSection, {
     Label = "Auto-Rejoin", Desc = "Automatically rejoin on disconnect",
     Icon = Icons.Reload, IconColor = Theme.Success,
-    Default = Config.AutoRejoin, Order = 3,
-    Callback = function(v)
-        Config.AutoRejoin = v; saveSettings()
-        if v then setupAutoRejoin() end
-        notify(v and "Enabled" or "Disabled", "Auto-Rejoin " .. (v and "activated" or "deactivated"), v and "success" or "info", 2)
-    end,
+    Value = Config.AutoRejoin, Order = 3,
 })
 
 -- Rejoin delay
 local rejoinDelaySection = addSection(ProtectionPage, "Rejoin Settings", { Order = 2, Spacing = 6 })
 
-addDropdown(rejoinDelaySection, {
-    Label = "Rejoin Delay", Options = {"1", "2", "3", "5", "10"},
-    Default = tostring(Config.RejoinDelay), Order = 1,
-    Callback = function(v)
-        Config.RejoinDelay = tonumber(v) or 3; saveSettings()
-        notify("Updated", "Rejoin delay set to " .. v .. "s", "info", 2)
-    end,
-})
+addInfoRow(rejoinDelaySection, { Label = "Rejoin Delay", Value = Config.RejoinDelay .. "s", Order = 1 })
 
 -- Connection status
 local connSection = addSection(ProtectionPage, "Connection Status", { Order = 3, Spacing = 6 })
@@ -2473,64 +2220,34 @@ local _, perfMemFill = progressBar(memRow, { Value = 0.3, Height = 6, Position =
 -- FPS Control
 local fpsSection = addSection(PerformancePage, "FPS Control", { Order = 2, Spacing = 6 })
 
-addToggle(fpsSection, {
+addDataRow(fpsSection, {
     Label = "FPS Lock", Desc = "Cap frame rate for stability",
     Icon = Icons.Target, IconColor = Theme.Primary,
-    Default = Config.FPSLockEnabled, Order = 1,
-    Callback = function(v)
-        Config.FPSLockEnabled = v; saveSettings()
-        if v then setFPSLock(Config.FPSLockValue) else setFPSLock(nil) end
-        notify(v and "Enabled" or "Disabled", "FPS Lock " .. (v and ("set to " .. Config.FPSLockValue) or "removed"), v and "success" or "info", 2)
-    end,
+    Value = Config.FPSLockEnabled, Order = 1,
 })
 
-addDropdown(fpsSection, {
-    Label = "Target FPS", Options = {"15", "20", "30", "45", "60"},
-    Default = tostring(Config.FPSLockValue), Order = 2,
-    Callback = function(v)
-        Config.FPSLockValue = tonumber(v) or 60; saveSettings()
-        if Config.FPSLockEnabled then setFPSLock(Config.FPSLockValue) end
-        notify("Updated", "FPS target set to " .. v, "info", 2)
-    end,
-})
+addInfoRow(fpsSection, { Label = "Target FPS", Value = tostring(Config.FPSLockValue), Order = 2 })
 
 -- Map optimization
 local mapSection = addSection(PerformancePage, "Map Optimization", { Order = 3, Spacing = 6 })
 
-addToggle(mapSection, {
+addDataRow(mapSection, {
     Label = "Enable Optimization", Desc = "Remove decorations & effects",
     Icon = Icons.Map, IconColor = Theme.Warning,
-    Default = Config.MapOptimization, Order = 1,
-    Callback = function(v)
-        Config.MapOptimization = v; saveSettings()
-        if v then optimizeMap() end
-        notify(v and "Optimizing" or "Disabled", v and (State.RemovedObjects .. " objects processed") or "Map optimization off", v and "success" or "info", 2)
-    end,
+    Value = Config.MapOptimization, Order = 1,
 })
 
-addDropdown(mapSection, {
-    Label = "Optimization Level", Options = {"Low", "Medium", "High", "Extreme"},
-    Default = Config.OptimizationLevel, Order = 2,
-    Callback = function(v)
-        Config.OptimizationLevel = v; saveSettings()
-        State.OptimizationApplied = false
-        notify("Updated", "Optimization level: " .. v, "info", 2)
-    end,
-})
+addInfoRow(mapSection, { Label = "Optimization Level", Value = Config.OptimizationLevel, Order = 2 })
 
 local _, perfRemovedLbl = addInfoRow(mapSection, { Label = "Objects Processed", Value = "0", Order = 3 })
 
 -- Black Screen
 local blackSection = addSection(PerformancePage, "Black Screen", { Order = 4, Spacing = 6 })
 
-addToggle(blackSection, {
+addDataRow(blackSection, {
     Label = "Black Screen Mode", Desc = "Cover game to save CPU/GPU resources",
     Icon = Icons.Monitor, IconColor = Theme.Primary,
-    Default = Config.BlackScreen, Order = 1,
-    Callback = function(v)
-        setBlackScreen(v); saveSettings()
-        notify(v and "Enabled" or "Disabled", v and "Black screen active - saving resources" or "Black screen removed", v and "success" or "info", 2)
-    end,
+    Value = Config.BlackScreen, Order = 1,
 })
 
 -- ============================================================
@@ -2542,31 +2259,22 @@ addPageHeader(SettingsPage, "Settings", "Configure Reconnect preferences", 0)
 -- General
 local generalSection = addSection(SettingsPage, "General", { Order = 1, Spacing = 4 })
 
-addToggle(generalSection, {
+addDataRow(generalSection, {
     Label = "Heartbeat Monitor", Desc = "Track connection health",
     Icon = Icons.Wifi, IconColor = Theme.Success,
-    Default = Config.HeartbeatEnabled, Order = 1,
-    Callback = function(v) Config.HeartbeatEnabled = v; saveSettings(); if v then runHeartbeat() end end,
+    Value = Config.HeartbeatEnabled, Order = 1,
 })
 
-addToggle(generalSection, {
+addDataRow(generalSection, {
     Label = "Show FPS Counter", Desc = "Display FPS in dashboard",
     Icon = Icons.Monitor, IconColor = Theme.Primary,
-    Default = Config.ShowFPS, Order = 2,
-    Callback = function(v) Config.ShowFPS = v; saveSettings(); if v then setupFPSCounter() end end,
+    Value = Config.ShowFPS, Order = 2,
 })
 
 -- Monitoring
 local intervalSection = addSection(SettingsPage, "Monitoring", { Order = 2, Spacing = 6 })
 
-addDropdown(intervalSection, {
-    Label = "Update Interval", Options = {"1", "3", "5", "10", "15", "30"},
-    Default = tostring(Config.UpdateInterval), Order = 1,
-    Callback = function(v)
-        Config.UpdateInterval = tonumber(v) or 5; saveSettings()
-        notify("Updated", "Update interval: " .. v .. "s", "info", 2)
-    end,
-})
+addInfoRow(intervalSection, { Label = "Update Interval", Value = Config.UpdateInterval .. "s", Order = 1 })
 
 -- About
 local aboutSection = addSection(SettingsPage, "About", { Order = 3, Spacing = 6 })
@@ -2844,7 +2552,7 @@ return {
     sendWebhook = sendWebhook,
     setBlackScreen = function(on)
         if on == nil then on = not BlackScreenActive end
-        setBlackScreen(on); saveSettings()
+        setBlackScreen(on)
         return BlackScreenActive
     end,
     VERSION = VERSION,
