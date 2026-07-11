@@ -2478,6 +2478,9 @@ if Config.WebhookOnStart and Config.WebhookURL ~= "" then
 end
 
 task.delay(0.5, function()
+    if Config.ShowUI then
+        showWindow()
+    end
     notify("Reconnect Active", "v" .. VERSION .. " - Pro Plus", "success", 4)
 end)
 
