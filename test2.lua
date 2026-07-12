@@ -1,54 +1,6 @@
--- Reconnect V2 - Glass Morphism UI v2.1.0
--- Loadstring compatible - CoreGui - Image Icons
--- Pro Plus Theme
---
--- Usage:
--- getgenv().ReconnectConfig = {
---     -- Launcher
---     ShowUI                  = false,          -- true = full UI, false = minimal panel
---     BypassPlayerLoading     = false,          -- skip character load wait
-
---     -- General
---     UpdateInterval          = 5,             -- seconds between status updates
---     AutoRejoin              = true,          -- rejoin on teleport fail
---     RejoinDelay             = 3,             -- seconds before rejoin attempt
---     AntiKick                = false,         -- block server kicks
---     AntiIdle                = false,         -- prevent AFK disconnect
---     MemoryWarningThreshold  = 500,           -- MB before warning
---     HeartbeatEnabled        = true,          -- heartbeat monitoring
-
---     -- FPS
---     ShowFPS                 = true,          -- display FPS counter
---     FPSLockEnabled          = false,         -- cap FPS
---     FPSLockValue            = 60,            -- FPS cap target
-
---     -- Map Optimization
---     MapOptimization         = false,         -- strip decor/particles/etc
---     OptimizationLevel       = "Extreme",     -- Low / Medium / High / Extreme
-
---     -- Webhook
---     WebhookURL              = "",            -- Discord webhook URL
---     WebhookOnDisconnect     = false,         -- notify on disconnect
---     WebhookOnRejoin         = false,         -- notify on rejoin
---     WebhookOnStart          = false,         -- notify on start
-
---     -- Display
---     BlackScreen             = false,         -- black overlay mode
--- }
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/kattie21/test/main/test2.lua"))()
-
--- ============================================================
--- PHASE 1: ANTI-DETECTION WRAPPERS (WindUI-style)
--- ============================================================
-
 local cloneref = cloneref or clonereference or function(inst) return inst end
 local ProtectGui = protectgui or (syn and syn.protect_gui) or function() end
 local GUIParent = gethui and gethui() or cloneref(game:GetService("CoreGui"))
-
--- ============================================================
--- PHASE 1: SERVICES (cloneref-wrapped)
--- ============================================================
-
 local GuiService       = cloneref(game:GetService("GuiService"))
 local Players          = cloneref(game:GetService("Players"))
 local HttpService      = cloneref(game:GetService("HttpService"))
@@ -58,10 +10,6 @@ local UserInputService = cloneref(game:GetService("UserInputService"))
 local TeleportService  = cloneref(game:GetService("TeleportService"))
 local Stats            = cloneref(game:GetService("Stats"))
 local Lighting         = cloneref(game:GetService("Lighting"))
-
--- ============================================================
--- PHASE 1: WAIT FOR GAME
--- ============================================================
 
 local function waitForGame()
     local bypassLoading = false
@@ -83,25 +31,13 @@ end
 
 waitForGame()
 
--- ============================================================
--- PHASE 1: THEME (Pro Plus - Dashboard-matched)
--- ============================================================
--- Mirrors reconnect_user_dashboard color system:
--- Surfaces: slate-900/95, slate-800/90 with transparency
--- Cards: slate-800/90 border slate-700/50
--- Active: bg-cyan-500/15 with left cyan accent bar
--- Text gradient: cyan-400 to blue-500
-
 local Theme = {
-    -- Brand (cyan-400 / blue-500 gradient)
     Primary       = Color3.fromRGB(34, 211, 238),
     PrimaryDark   = Color3.fromRGB(6, 182, 212),
     Secondary     = Color3.fromRGB(59, 130, 246),
     Accent        = Color3.fromRGB(100, 220, 255),
     GradStart     = Color3.fromRGB(34, 211, 238),
     GradEnd       = Color3.fromRGB(59, 130, 246),
-
-    -- Surfaces (slate palette)
     BgDeep        = Color3.fromRGB(8, 10, 18),
     BgBase        = Color3.fromRGB(15, 23, 42),
     BgElevated    = Color3.fromRGB(22, 28, 45),
@@ -110,58 +46,38 @@ local Theme = {
     BgHover       = Color3.fromRGB(30, 41, 59),
     BgInput       = Color3.fromRGB(15, 23, 42),
     BgSidebar     = Color3.fromRGB(12, 17, 32),
-
-    -- Glass transparency values
     GlassWindow   = 0.05,
     GlassSidebar  = 0.05,
     GlassCard     = 0.1,
     GlassTopBar   = 0.15,
     GlassOverlay  = 0.4,
-
-    -- Toggle
     ToggleOn      = Color3.fromRGB(34, 211, 238),
     ToggleOff     = Color3.fromRGB(51, 65, 85),
     ToggleKnob    = Color3.fromRGB(255, 255, 255),
-
-    -- Active state
     ActiveBg      = Color3.fromRGB(34, 211, 238),
     ActiveBgTrans = 0.85,
-
-    -- Text
     Text          = Color3.fromRGB(248, 250, 252),
     TextSub       = Color3.fromRGB(203, 213, 225),
     TextDim       = Color3.fromRGB(148, 163, 184),
     TextMuted     = Color3.fromRGB(100, 116, 139),
-
-    -- Semantic
     Success       = Color3.fromRGB(52, 211, 153),
     Error         = Color3.fromRGB(248, 113, 113),
     Warning       = Color3.fromRGB(251, 191, 36),
     Info          = Color3.fromRGB(96, 165, 250),
-
-    -- Borders
     Border        = Color3.fromRGB(51, 65, 85),
     BorderTrans   = 0.5,
     BorderLight   = Color3.fromRGB(71, 85, 105),
-
-    -- Radius
     R_SM   = UDim.new(0, 8),
     R_MD   = UDim.new(0, 12),
     R_LG   = UDim.new(0, 16),
     R_XL   = UDim.new(0, 20),
     R_2XL  = UDim.new(0, 24),
     R_PILL = UDim.new(1, 0),
-
-    -- Fonts
     Font     = Enum.Font.Gotham,
     FontMed  = Enum.Font.GothamMedium,
     FontBold = Enum.Font.GothamBold,
     FontSB   = Enum.Font.GothamSemibold,
 }
-
--- ============================================================
--- PHASE 1: CONFIGURATION
--- ============================================================
 
 local function getConfigValue(key, default)
     if getgenv then
@@ -195,10 +111,6 @@ local Config = {
     BlackScreen             = getConfigValue("BlackScreen", false),
 }
 
--- ============================================================
--- PHASE 1: STATE
--- ============================================================
-
 local State = {
     StopUpdate          = false,
     SessionStart        = os.time(),
@@ -219,10 +131,6 @@ local LP      = Players.LocalPlayer
 local VERSION = "2.2.1"
 local Terrain = Workspace:FindFirstChildOfClass("Terrain")
 local LogoImage = "rbxassetid://73879916935249"
-
--- ============================================================
--- PHASE 1: EMBEDDED ICONS (no external fetching)
--- ============================================================
 
 local Icons = {
     Home       = "rbxassetid://98755624629571",
@@ -266,10 +174,6 @@ local Icons = {
     FileText   = "rbxassetid://90496405707281",
 }
 
--- ============================================================
--- PHASE 1: UTILITIES
--- ============================================================
-
 local function formatTime(seconds)
     local h = math.floor(seconds / 3600)
     local m = math.floor((seconds % 3600) / 60)
@@ -286,21 +190,6 @@ end
 local function lerpColor(a, b, t)
     return Color3.new(a.R + (b.R - a.R) * t, a.G + (b.G - a.G) * t, a.B + (b.B - a.B) * t)
 end
-
--- ============================================================
--- PHASE 1: FILE OPS / LOGGING
--- ============================================================
-
--- Settings are data-only, sourced entirely from getgenv().ReconnectConfig
--- (the autoexecute config) — no local reconnect_settings.json persistence
--- and no in-game toggle can change them. To change a setting, edit the
--- autoexecute script's ReconnectConfig table and restart; reconnect_termux's
--- own Settings tab is the other place these values are configured for the
--- session's script generation.
-
--- ============================================================
--- PHASE 1: WEBHOOK NOTIFICATIONS
--- ============================================================
 
 local function sendWebhook(title, description, color)
     if Config.WebhookURL == "" then return end
@@ -340,10 +229,6 @@ local function sendWebhook(title, description, color)
     end)
 end
 
--- ============================================================
--- PHASE 1: PROTECTION SYSTEMS
--- ============================================================
-
 local function setupAntiKick()
     if not Config.AntiKick then return true end
     return pcall(function()
@@ -375,10 +260,6 @@ local function setupAntiIdle()
         table.insert(State.Connections, conn)
     end)
 end
-
--- ============================================================
--- PHASE 1: MAP OPTIMIZATION
--- ============================================================
 
 local function optimizeMap()
     if not Config.MapOptimization or State.OptimizationApplied then return end
@@ -457,10 +338,6 @@ local function optimizeMap()
     State.OptimizationApplied = true; State.RemovedObjects = removed
 end
 
--- ============================================================
--- PHASE 1: AUTO-REJOIN
--- ============================================================
-
 local function setupAutoRejoin()
     if not Config.AutoRejoin then return end
     pcall(function()
@@ -477,10 +354,6 @@ local function setupAutoRejoin()
         table.insert(State.Connections, conn)
     end)
 end
-
--- ============================================================
--- PHASE 1: MONITORS
--- ============================================================
 
 local function updateMemoryUsage()
     pcall(function() State.MemoryUsage = math.floor(Stats:GetTotalMemoryUsageMb()) end)
@@ -562,10 +435,6 @@ local function cleanup()
     for _, c in ipairs(State.Connections) do pcall(function() c:Disconnect() end) end
     State.Connections = {}
 end
-
--- ============================================================
--- PHASE 1: BLACK SCREEN SYSTEM
--- ============================================================
 
 local BlackScreenGui = nil
 local BlackScreenActive = false
@@ -652,11 +521,6 @@ local function setBlackScreen(enabled)
     end
 end
 
--- ============================================================
--- PHASE 2: SCREENGUI (anti-detection: gethui + cloneref + protectgui)
--- ============================================================
-
--- Kill any previous Reconnect GUI
 pcall(function()
     for _, v in ipairs(GUIParent:GetChildren()) do
         if v:IsA("ScreenGui") and v.Name == "ReconnectV2" then v:Destroy() end
@@ -672,10 +536,6 @@ ScreenGui.DisplayOrder        = 999
 ScreenGui.Parent              = GUIParent
 ProtectGui(ScreenGui)
 
--- ============================================================
--- PHASE 2: INSTANCE FACTORY
--- ============================================================
-
 local function new(class, props, children)
     local inst = Instance.new(class)
     if props then
@@ -689,10 +549,6 @@ local function new(class, props, children)
     end
     return inst
 end
-
--- ============================================================
--- PHASE 2: UI CONSTRAINT HELPERS
--- ============================================================
 
 local function corner(parent, r)
     if type(r) == "number" then r = UDim.new(0, r) end
@@ -753,10 +609,6 @@ local function label(parent, props)
     })
 end
 
--- ============================================================
--- PHASE 2: TWEEN HELPERS
--- ============================================================
-
 local TI_FAST   = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local TI_NORMAL = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local TI_SMOOTH = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -769,14 +621,6 @@ local function tween(obj, info, props)
     return t
 end
 
--- ============================================================
--- PHASE 2: GLASS-MORPHISM FACTORY
--- ============================================================
--- Creates glass-style frames mimicking the dashboard's
--- backdrop-blur + translucent dark surfaces.
-
--- Variants whose Size is always scale/formula-driven (never swapped to
--- AutomaticSize after creation) — safe to auto-attach a synced drop shadow.
 local function glass(parent, variant, props)
     props = props or {}
     local bgMap = {
@@ -810,8 +654,6 @@ local function glass(parent, variant, props)
         stroke(frame, props.BorderColor or Theme.Border, props.BorderTrans or Theme.BorderTrans, props.BorderThick or 1)
     end
 
-    -- Subtle diagonal glass sheen — lighter at the top-left, settling into
-    -- the base color — instead of a flat single-tone surface.
     if props.NoSheen ~= true and (variant == "window" or variant == "card" or variant == "sidebar" or variant == "topbar") then
         local baseColor = props.Bg or style.bg
         new("UIGradient", {
@@ -823,10 +665,6 @@ local function glass(parent, variant, props)
 
     return frame
 end
-
--- ============================================================
--- PHASE 2: GRADIENT HELPERS
--- ============================================================
 
 local function applyGradient(obj, c1, c2, rotation)
     return new("UIGradient", {
@@ -841,10 +679,6 @@ local function gradientLabel(parent, props)
     applyGradient(lbl, props.GradFrom or Theme.GradStart, props.GradTo or Theme.GradEnd, props.GradRotation or 0)
     return lbl
 end
-
--- ============================================================
--- PHASE 2: HOVER + RIPPLE EFFECTS
--- ============================================================
 
 local function addHover(frame, hoverBg, hoverTrans, normalBg, normalTrans)
     hoverBg    = hoverBg    or Theme.BgHover
@@ -890,10 +724,6 @@ local function addRipple(button)
     end)
 end
 
--- ============================================================
--- PHASE 2: SCROLLING FRAME
--- ============================================================
-
 local function scrollFrame(parent, props)
     props = props or {}
     local sf = new("ScrollingFrame", {
@@ -916,11 +746,6 @@ local function scrollFrame(parent, props)
     return sf
 end
 
--- ============================================================
--- PHASE 2: IMAGE ICON HELPERS
--- ============================================================
-
--- Create an image icon (uses library asset IDs)
 local function createIcon(parent, iconId, size, color)
     if not iconId or iconId == "" then return nil end
     local s = size or 16
@@ -937,7 +762,6 @@ local function createIcon(parent, iconId, size, color)
     return icon
 end
 
--- Create an icon box (colored bg rounded-xl with image icon)
 local function iconBox(parent, iconId, bgColor, size, iconSize)
     size = size or 36
     local box = new("Frame", {
@@ -949,7 +773,6 @@ local function iconBox(parent, iconId, bgColor, size, iconSize)
     })
     corner(box, math.floor(size * 0.3))
 
-    -- Soft glow ring bleeding out from behind the icon box for extra depth.
     local glow = new("Frame", {
         Name                   = "Glow",
         BackgroundColor3       = bgColor or Theme.Primary,
@@ -968,10 +791,6 @@ local function iconBox(parent, iconId, bgColor, size, iconSize)
 
     return box
 end
-
--- ============================================================
--- PHASE 2: PROGRESS BAR
--- ============================================================
 
 local function progressBar(parent, props)
     props = props or {}
@@ -1001,10 +820,6 @@ local function progressBar(parent, props)
     return track, fill
 end
 
--- ============================================================
--- PHASE 2: STATUS DOT
--- ============================================================
-
 local function statusDot(parent, color, size)
     size = size or 8
     local container = new("Frame", {
@@ -1014,7 +829,6 @@ local function statusDot(parent, color, size)
         Parent = parent,
     })
 
-    -- Glow ring
     new("Frame", {
         Name                   = "Glow",
         BackgroundColor3       = color or Theme.Success,
@@ -1026,7 +840,6 @@ local function statusDot(parent, color, size)
     })
     corner(container:FindFirstChild("Glow"), UDim.new(1, 0))
 
-    -- Solid dot
     new("Frame", {
         Name                   = "Dot",
         BackgroundColor3       = color or Theme.Success,
@@ -1040,10 +853,6 @@ local function statusDot(parent, color, size)
 
     return container
 end
-
--- ============================================================
--- PHASE 2: DIVIDER + BADGE
--- ============================================================
 
 local function divider(parent, order)
     return new("Frame", {
@@ -1080,10 +889,6 @@ local function badge(parent, text, color, props)
     return bg
 end
 
--- ============================================================
--- PHASE 3: NOTIFICATION SYSTEM (Bottom-Right)
--- ============================================================
-
 local NotificationContainer = new("Frame", {
     Name                   = "Notifications",
     BackgroundTransparency = 1,
@@ -1109,7 +914,6 @@ local function notify(title, message, variant, duration)
     }
     local style = colors[variant] or colors.info
 
-    -- Card container
     local card = glass(NotificationContainer, "card", {
         Name     = "Toast",
         Size     = UDim2.new(1, 0, 0, 72),
@@ -1117,9 +921,8 @@ local function notify(title, message, variant, duration)
         ZIndex   = 100,
     })
     card.BackgroundTransparency = 0.05
-    card.Position = UDim2.new(1, 40, 0, 0) -- start off-screen right
+    card.Position = UDim2.new(1, 40, 0, 0)
 
-    -- Icon badge
     local iconBg = new("Frame", {
         Name                   = "IconBg",
         BackgroundColor3       = style.accent,
@@ -1132,7 +935,6 @@ local function notify(title, message, variant, duration)
     corner(iconBg, 10)
     createIcon(iconBg, style.iconId, 16, style.accent)
 
-    -- Title
     label(card, {
         Text     = title or "Notification",
         Font     = Theme.FontBold,
@@ -1143,7 +945,6 @@ local function notify(title, message, variant, duration)
         ZIndex   = 101,
     })
 
-    -- Message
     label(card, {
         Text     = message or "",
         Font     = Theme.Font,
@@ -1155,7 +956,6 @@ local function notify(title, message, variant, duration)
         ZIndex   = 101,
     })
 
-    -- Close button
     local closeBtn = new("TextButton", {
         Name                   = "Close",
         BackgroundTransparency = 1,
@@ -1171,12 +971,10 @@ local function notify(title, message, variant, duration)
 
     table.insert(activeNotifications, card)
 
-    -- Slide in
     task.defer(function()
         tween(card, TI_SPRING, { Position = UDim2.new(0, 0, 0, 0) })
     end)
 
-    -- Dismiss
     local dismissed = false
     local function dismiss()
         if dismissed then return end
@@ -1198,16 +996,11 @@ local function notify(title, message, variant, duration)
     return card
 end
 
--- ============================================================
--- PHASE 4: MAIN WINDOW FRAME (no decorative orbs)
--- ============================================================
-
 local WINDOW_WIDTH  = 620
 local WINDOW_HEIGHT = 440
 local SIDEBAR_WIDTH = 156
 local TOPBAR_HEIGHT = 46
 
--- Outer wrapper (centered, handles drag)
 local WindowWrapper = new("Frame", {
     Name                   = "WindowWrapper",
     BackgroundTransparency = 1,
@@ -1218,7 +1011,6 @@ local WindowWrapper = new("Frame", {
     Parent                 = ScreenGui,
 })
 
--- Main glass panel
 local Window = glass(WindowWrapper, "window", {
     Name     = "MainWindow",
     Size     = UDim2.new(1, 0, 1, 0),
@@ -1226,10 +1018,6 @@ local Window = glass(WindowWrapper, "window", {
     Radius   = Theme.R_2XL,
     Clip     = true,
 })
-
--- ============================================================
--- PHASE 4: DRAGGING
--- ============================================================
 
 local dragging, dragStart, startPos = false, nil, nil
 
@@ -1258,10 +1046,6 @@ local function onDragMove(input)
     end
 end
 
--- ============================================================
--- PHASE 4: TOP BAR
--- ============================================================
-
 local TopBar = glass(Window, "topbar", {
     Name     = "TopBar",
     Size     = UDim2.new(1, -16, 0, TOPBAR_HEIGHT),
@@ -1271,17 +1055,14 @@ local TopBar = glass(Window, "topbar", {
 })
 TopBar.BackgroundTransparency = 0.12
 
--- Make topbar draggable
 TopBar.InputBegan:Connect(onDragStart)
 UserInputService.InputChanged:Connect(onDragMove)
 
--- Left side
 local TopBarLeft = new("Frame", {
     Name = "Left", BackgroundTransparency = 1,
     Size = UDim2.new(0.5, 0, 1, 0), ZIndex = 11, Parent = TopBar,
 })
 
--- Brand icon (full logo image)
 local brandIcon = new("ImageLabel", {
     Name                   = "BrandIcon",
     BackgroundTransparency = 1,
@@ -1293,7 +1074,6 @@ local brandIcon = new("ImageLabel", {
     Parent                 = TopBarLeft,
 })
 
--- Gradient title
 local titleLabel = gradientLabel(TopBarLeft, {
     Text      = "Reconnect",
     Font      = Theme.FontBold,
@@ -1304,7 +1084,6 @@ local titleLabel = gradientLabel(TopBarLeft, {
 })
 titleLabel.ZIndex = 12
 
--- Version badge
 local versionBadge = badge(TopBarLeft, "v" .. VERSION, Theme.Primary, {
     Size = UDim2.new(0, 0, 0, 18),
 })
@@ -1339,7 +1118,6 @@ local topStatusLabel = label(statusContainer, {
     ZIndex   = 12,
 })
 
--- Right side: Window controls
 local TopBarRight = new("Frame", {
     Name = "Right", BackgroundTransparency = 1,
     Size = UDim2.new(0, 80, 1, 0),
@@ -1347,7 +1125,6 @@ local TopBarRight = new("Frame", {
     ZIndex = 11, Parent = TopBar,
 })
 
--- Minimize button (simple dash text)
 local minBtn = new("TextButton", {
     Name = "Minimize",
     BackgroundColor3 = Theme.BgCard, BackgroundTransparency = 0.6,
@@ -1359,7 +1136,6 @@ local minBtn = new("TextButton", {
 })
 corner(minBtn, 8)
 
--- Close button (simple X text)
 local closeWindowBtn = new("TextButton", {
     Name = "Close",
     BackgroundColor3 = Color3.fromRGB(127, 29, 29), BackgroundTransparency = 0.7,
@@ -1371,7 +1147,6 @@ local closeWindowBtn = new("TextButton", {
 })
 corner(closeWindowBtn, 8)
 
--- Hover effects for controls
 minBtn.MouseEnter:Connect(function()
     tween(minBtn, TI_FAST, { BackgroundTransparency = 0.3, TextColor3 = Theme.Text })
 end)
@@ -1384,10 +1159,6 @@ end)
 closeWindowBtn.MouseLeave:Connect(function()
     tween(closeWindowBtn, TI_FAST, { BackgroundTransparency = 0.7, BackgroundColor3 = Color3.fromRGB(127, 29, 29), TextColor3 = Theme.TextDim })
 end)
-
--- ============================================================
--- PHASE 4: WINDOW SHOW/HIDE
--- ============================================================
 
 local windowOpen = false
 
@@ -1411,10 +1182,6 @@ closeWindowBtn.MouseButton1Click:Connect(hideWindow)
 addRipple(minBtn)
 addRipple(closeWindowBtn)
 
--- ============================================================
--- PHASE 5: SIDEBAR
--- ============================================================
-
 local Sidebar = glass(Window, "sidebar", {
     Name     = "Sidebar",
     Size     = UDim2.new(0, SIDEBAR_WIDTH, 1, -(TOPBAR_HEIGHT + 20)),
@@ -1434,10 +1201,6 @@ SidebarScroll.ZIndex = 6
 uiList(SidebarScroll, Enum.FillDirection.Vertical, 2)
 pad(SidebarScroll, 4, 4, 2, 2)
 
--- ============================================================
--- PHASE 5: SIDEBAR NAV ITEMS
--- ============================================================
-
 local tabs = {}
 local currentTab = nil
 
@@ -1455,7 +1218,6 @@ local function addSidebarSection(text, order)
     return header
 end
 
--- Sidebar nav item with IMAGE icon
 local function addSidebarItem(name, iconId, order)
     local item = new("TextButton", {
         Name                   = "Nav_" .. name,
@@ -1470,7 +1232,6 @@ local function addSidebarItem(name, iconId, order)
     })
     corner(item, 10)
 
-    -- Left accent bar — only visible while this tab is active
     local accentBar = new("Frame", {
         Name                   = "Accent",
         BackgroundColor3       = Theme.Primary,
@@ -1484,7 +1245,6 @@ local function addSidebarItem(name, iconId, order)
     })
     corner(accentBar, UDim.new(1, 0))
 
-    -- Icon (ImageLabel)
     local iconFrame = new("Frame", {
         Name = "IconFrame",
         BackgroundTransparency = 1,
@@ -1496,7 +1256,6 @@ local function addSidebarItem(name, iconId, order)
     local iconImg = createIcon(iconFrame, iconId, 16, Theme.TextDim)
     if iconImg then iconImg.ZIndex = 8 end
 
-    -- Label
     local textLabel = new("TextLabel", {
         Name                   = "Label",
         BackgroundTransparency = 1,
@@ -1512,7 +1271,6 @@ local function addSidebarItem(name, iconId, order)
         Parent                 = item,
     })
 
-    -- Hover
     item.MouseEnter:Connect(function()
         if currentTab ~= name then
             tween(item, TI_FAST, { BackgroundTransparency = 0.9 })
@@ -1536,7 +1294,6 @@ local function addSidebarItem(name, iconId, order)
     return item
 end
 
--- Build sidebar navigation
 addSidebarSection("MAIN", 1)
 addSidebarItem("Dashboard", Icons.Home, 2)
 addSidebarItem("Protection", Icons.Shield, 3)
@@ -1544,10 +1301,6 @@ addSidebarItem("Protection", Icons.Shield, 3)
 addSidebarSection("SYSTEM", 10)
 addSidebarItem("Performance", Icons.Zap, 11)
 addSidebarItem("Settings", Icons.Settings, 12)
-
--- ============================================================
--- PHASE 5: TAB SWITCHING
--- ============================================================
 
 local function switchTab(name)
     if currentTab == name then return end
@@ -1588,10 +1341,6 @@ for _, tab in ipairs(tabs) do
     end)
 end
 
--- ============================================================
--- PHASE 5: PLAYER INFO CARD
--- ============================================================
-
 local PlayerCard = new("Frame", {
     Name                   = "PlayerCard",
     BackgroundColor3       = Theme.BgCard,
@@ -1604,7 +1353,6 @@ local PlayerCard = new("Frame", {
 corner(PlayerCard, 12)
 stroke(PlayerCard, Theme.Border, 0.7)
 
--- Avatar
 local avatarFrame = new("Frame", {
     Name = "Avatar",
     BackgroundColor3 = Theme.BgElevated, BackgroundTransparency = 0,
@@ -1624,7 +1372,6 @@ pcall(function()
     corner(img, UDim.new(1, 0))
 end)
 
--- Fallback initial
 new("TextLabel", {
     Name = "Initial", BackgroundTransparency = 1,
     Size = UDim2.new(1, 0, 1, 0),
@@ -1633,7 +1380,6 @@ new("TextLabel", {
     TextColor3 = Theme.Primary, ZIndex = 7, Parent = avatarFrame,
 })
 
--- Display name (fixed: no chained .ZIndex)
 local dispNameLbl = label(PlayerCard, {
     Text      = LP.DisplayName,
     Font      = Theme.FontSB,
@@ -1644,7 +1390,6 @@ local dispNameLbl = label(PlayerCard, {
     ZIndex    = 7,
 })
 
--- Username
 local userNameLbl = label(PlayerCard, {
     Text      = "@" .. LP.Name,
     Font      = Theme.Font,
@@ -1655,14 +1400,9 @@ local userNameLbl = label(PlayerCard, {
     ZIndex    = 7,
 })
 
--- Online dot
 local playerDot = statusDot(PlayerCard, Theme.Success, 6)
 playerDot.Position = UDim2.new(0, 34, 0, 6)
 playerDot.ZIndex   = 9
-
--- ============================================================
--- PHASE 6: CONTENT AREA & PAGE SYSTEM
--- ============================================================
 
 local ContentArea = new("Frame", {
     Name                   = "ContentArea",
@@ -1702,10 +1442,6 @@ local DashboardPage   = createPage("Dashboard")
 local ProtectionPage  = createPage("Protection")
 local PerformancePage = createPage("Performance")
 local SettingsPage    = createPage("Settings")
-
--- ============================================================
--- PHASE 6: PAGE HEADER + SECTION + STAT CARD
--- ============================================================
 
 local function addPageHeader(page, title, subtitle, order)
     local header = new("Frame", {
@@ -1749,7 +1485,6 @@ local function addSection(page, title, props)
     return section
 end
 
--- Stat card with image icon (fixed text positioning)
 local function addStatCard(parent, props)
     props = props or {}
     local card = new("Frame", {
@@ -1762,7 +1497,6 @@ local function addStatCard(parent, props)
     })
     corner(card, 12)
 
-    -- Icon (top-left, image-based)
     if props.Icon then
         local ib = new("Frame", {
             Name = "IconBg",
@@ -1776,7 +1510,6 @@ local function addStatCard(parent, props)
         createIcon(ib, props.Icon, 14, props.IconColor or Theme.Primary)
     end
 
-    -- Value (below icon with spacing)
     local valueLbl = label(card, {
         Text = props.Value or "0",
         Font = Theme.FontBold,
@@ -1787,7 +1520,6 @@ local function addStatCard(parent, props)
         AlignX = Enum.TextXAlignment.Left,
     })
 
-    -- Label (at bottom with clear gap from value)
     local descLbl = label(card, {
         Text = props.Label or "",
         Font = Theme.FontMed,
@@ -1818,19 +1550,8 @@ local function addStatsRow(page, order)
     return row
 end
 
--- Set default tab
 switchTab("Dashboard")
 
--- ============================================================
--- PHASE 7: SETTINGS DATA ROW (read-only — no in-game toggle)
--- ============================================================
--- Settings are data-only, sourced from getgenv().ReconnectConfig (autoexecute)
--- and reconnect_termux. There is no interactive toggle/dropdown in-game.
-
--- Read-only settings row — icon/label/desc layout with a static value badge.
--- value is a plain static badge instead of an interactive switch. Settings
--- are data-only (sourced from getgenv().ReconnectConfig / reconnect_termux),
--- not changeable in-game, so there is nothing here to click.
 local function addDataRow(parent, props)
     props = props or {}
 
@@ -1872,10 +1593,6 @@ local function addDataRow(parent, props)
     return row
 end
 
--- ============================================================
--- PHASE 7: BUTTON COMPONENT
--- ============================================================
-
 local function addButton(parent, props)
     props = props or {}
     local variant = props.Variant or "primary"
@@ -1905,7 +1622,6 @@ local function addButton(parent, props)
     if s.border then stroke(btn, s.borderColor or Theme.Border, 0.5) end
     if variant == "primary" then applyGradient(btn, Theme.GradStart, Theme.GradEnd) end
 
-    -- Add image icon to the left of text if provided
     if props.Icon then
         local iconImg = createIcon(btn, props.Icon, 14, s.text)
         if iconImg then
@@ -1913,7 +1629,7 @@ local function addButton(parent, props)
             iconImg.AnchorPoint = Vector2.new(0, 0.5)
             iconImg.ZIndex = 2
         end
-        -- Shift text right to accommodate icon
+
         btn.TextXAlignment = Enum.TextXAlignment.Center
         pad(btn, 0, 0, 24, 0)
     end
@@ -1928,10 +1644,6 @@ local function addButton(parent, props)
     if props.Callback then btn.MouseButton1Click:Connect(props.Callback) end
     return btn
 end
-
--- ============================================================
--- PHASE 7: SETTING ROW + INFO ROW + QUICK ACTION
--- ============================================================
 
 local function addSettingRow(parent, props)
     props = props or {}
@@ -1961,7 +1673,6 @@ local function addSettingRow(parent, props)
         })
     end
 
-    -- Right chevron (simple text)
     label(row, {
         Text = ">", Font = Theme.FontBold, Size = 16, Color = Theme.TextMuted,
         FrameSize = UDim2.new(0, 20, 1, 0), Position = UDim2.new(1, -28, 0, 0),
@@ -2022,11 +1733,6 @@ local function addQuickAction(parent, props)
     return card
 end
 
--- ============================================================
--- PHASE 8A: DASHBOARD TAB
--- ============================================================
-
--- Welcome Card (clean, no decorative orbs)
 local welcomeCard = glass(DashboardPage, "card", {
     Name = "WelcomeCard", Size = UDim2.new(1, 0, 0, 72),
     Order = 1, Clip = true,
@@ -2046,7 +1752,6 @@ label(welcomeCard, {
     Position = UDim2.new(0, 16, 0, 40),
 })
 
--- Stats Grid (2x2)
 local statsRow = addStatsRow(DashboardPage, 2)
 
 local _, fpsValueLbl = addStatCard(statsRow, {
@@ -2069,7 +1774,6 @@ local _, uptimeValueLbl = addStatCard(statsRow, {
     Value = "0s", Label = "Uptime", Order = 4,
 })
 
--- Session Info
 local sessionSection = addSection(DashboardPage, "Session Details", { Order = 3, Spacing = 6 })
 
 local _, sessionPlaceLbl     = addInfoRow(sessionSection, { Label = "Game",       Value = "Loading...",  Order = 1 })
@@ -2079,7 +1783,6 @@ local _, sessionPingsLbl     = addInfoRow(sessionSection, { Label = "Total Pings
 local _, sessionFailedLbl    = addInfoRow(sessionSection, { Label = "Failed",     Value = "0",           Order = 5, ValueColor = Theme.Error })
 local _, sessionReconnectsLbl = addInfoRow(sessionSection, { Label = "Reconnects", Value = "0",          Order = 6 })
 
--- Quick Actions
 label(DashboardPage, {
     Text = "Quick Actions", Font = Theme.FontBold, Size = 14, Color = Theme.Text,
     FrameSize = UDim2.new(1, 0, 0, 22), Order = 4,
@@ -2124,10 +1827,6 @@ addQuickAction(actionsGrid, {
     end,
 })
 
--- ============================================================
--- PHASE 8B: PROTECTION TAB
--- ============================================================
-
 addPageHeader(ProtectionPage, "Protection", "Shield your session from disconnects and interruptions", 0)
 
 local protectSection = addSection(ProtectionPage, "Session Protection", { Order = 1, Spacing = 4 })
@@ -2150,12 +1849,10 @@ addDataRow(protectSection, {
     Value = Config.AutoRejoin, Order = 3,
 })
 
--- Rejoin delay
 local rejoinDelaySection = addSection(ProtectionPage, "Rejoin Settings", { Order = 2, Spacing = 6 })
 
 addInfoRow(rejoinDelaySection, { Label = "Rejoin Delay", Value = Config.RejoinDelay .. "s", Order = 1 })
 
--- Connection status
 local connSection = addSection(ProtectionPage, "Connection Status", { Order = 3, Spacing = 6 })
 
 local _, connStatusLbl = addInfoRow(connSection, { Label = "Status",     Value = "Connected",  Order = 1, ValueColor = Theme.Success })
@@ -2163,7 +1860,6 @@ local _, connPingLbl   = addInfoRow(connSection, { Label = "Latency",   Value = 
 local _, connUptimeLbl = addInfoRow(connSection, { Label = "Uptime",    Value = "0s",           Order = 3 })
 local _, connKicksLbl  = addInfoRow(connSection, { Label = "Kicks Blocked", Value = "0",        Order = 4, ValueColor = Theme.Primary })
 
--- Protection actions
 local protectActions = addSection(ProtectionPage, nil, { Order = 4, Spacing = 8 })
 
 addButton(protectActions, {
@@ -2175,16 +1871,10 @@ addButton(protectActions, {
     end,
 })
 
--- ============================================================
--- PHASE 8C: PERFORMANCE TAB
--- ============================================================
-
 addPageHeader(PerformancePage, "Performance", "Monitor and optimize game performance", 0)
 
--- Live metrics
 local metricsSection = addSection(PerformancePage, "Live Metrics", { Order = 1, Spacing = 8 })
 
--- FPS
 local fpsRow = new("Frame", {
     Name = "FPSRow", BackgroundTransparency = 1,
     Size = UDim2.new(1, 0, 0, 40), LayoutOrder = 1, Parent = metricsSection,
@@ -2195,7 +1885,6 @@ local perfFpsLbl = label(fpsRow, { Text = "0", Font = Theme.FontBold, Size = 14,
     FrameSize = UDim2.new(0.3, 0, 0, 16), Position = UDim2.new(0.7, 0, 0, 0), AlignX = Enum.TextXAlignment.Right })
 local _, perfFpsFill = progressBar(fpsRow, { Value = 0.5, Height = 6, Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 6) })
 
--- Ping
 local pingRow = new("Frame", {
     Name = "PingRow", BackgroundTransparency = 1,
     Size = UDim2.new(1, 0, 0, 40), LayoutOrder = 2, Parent = metricsSection,
@@ -2206,7 +1895,6 @@ local perfPingLbl = label(pingRow, { Text = "0 ms", Font = Theme.FontBold, Size 
     FrameSize = UDim2.new(0.3, 0, 0, 16), Position = UDim2.new(0.7, 0, 0, 0), AlignX = Enum.TextXAlignment.Right })
 local _, perfPingFill = progressBar(pingRow, { Value = 0.1, Height = 6, Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 6) })
 
--- Memory
 local memRow = new("Frame", {
     Name = "MemRow", BackgroundTransparency = 1,
     Size = UDim2.new(1, 0, 0, 40), LayoutOrder = 3, Parent = metricsSection,
@@ -2217,7 +1905,6 @@ local perfMemLbl = label(memRow, { Text = "0 MB", Font = Theme.FontBold, Size = 
     FrameSize = UDim2.new(0.3, 0, 0, 16), Position = UDim2.new(0.7, 0, 0, 0), AlignX = Enum.TextXAlignment.Right })
 local _, perfMemFill = progressBar(memRow, { Value = 0.3, Height = 6, Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 6) })
 
--- FPS Control
 local fpsSection = addSection(PerformancePage, "FPS Control", { Order = 2, Spacing = 6 })
 
 addDataRow(fpsSection, {
@@ -2228,7 +1915,6 @@ addDataRow(fpsSection, {
 
 addInfoRow(fpsSection, { Label = "Target FPS", Value = tostring(Config.FPSLockValue), Order = 2 })
 
--- Map optimization
 local mapSection = addSection(PerformancePage, "Map Optimization", { Order = 3, Spacing = 6 })
 
 addDataRow(mapSection, {
@@ -2241,7 +1927,6 @@ addInfoRow(mapSection, { Label = "Optimization Level", Value = Config.Optimizati
 
 local _, perfRemovedLbl = addInfoRow(mapSection, { Label = "Objects Processed", Value = "0", Order = 3 })
 
--- Black Screen
 local blackSection = addSection(PerformancePage, "Black Screen", { Order = 4, Spacing = 6 })
 
 addDataRow(blackSection, {
@@ -2250,13 +1935,8 @@ addDataRow(blackSection, {
     Value = Config.BlackScreen, Order = 1,
 })
 
--- ============================================================
--- PHASE 8D: SETTINGS TAB
--- ============================================================
-
 addPageHeader(SettingsPage, "Settings", "Configure Reconnect preferences", 0)
 
--- General
 local generalSection = addSection(SettingsPage, "General", { Order = 1, Spacing = 4 })
 
 addDataRow(generalSection, {
@@ -2271,12 +1951,10 @@ addDataRow(generalSection, {
     Value = Config.ShowFPS, Order = 2,
 })
 
--- Monitoring
 local intervalSection = addSection(SettingsPage, "Monitoring", { Order = 2, Spacing = 6 })
 
 addInfoRow(intervalSection, { Label = "Update Interval", Value = Config.UpdateInterval .. "s", Order = 1 })
 
--- About
 local aboutSection = addSection(SettingsPage, "About", { Order = 3, Spacing = 6 })
 
 addInfoRow(aboutSection, { Label = "Version",   Value = "v" .. VERSION,     Order = 1, ValueColor = Theme.Primary })
@@ -2285,7 +1963,6 @@ addInfoRow(aboutSection, { Label = "Engine",     Value = "Roblox Glass UI", Orde
 addInfoRow(aboutSection, { Label = "Player",     Value = LP.DisplayName,    Order = 4 })
 addInfoRow(aboutSection, { Label = "User ID",    Value = tostring(LP.UserId), Order = 5 })
 
--- Danger Zone
 local dangerSection = addSection(SettingsPage, "Danger Zone", { Order = 4, Spacing = 8 })
 
 addButton(dangerSection, {
@@ -2306,10 +1983,6 @@ addButton(dangerSection, {
     end,
 })
 
--- ============================================================
--- PHASE 9: FLOATING OPEN BUTTON (Logo image)
--- ============================================================
-
 local OB_SIZE = 44
 
 local OpenButton = new("TextButton", {
@@ -2321,7 +1994,6 @@ local OpenButton = new("TextButton", {
     ZIndex = 200, Parent = ScreenGui,
 })
 
--- Full logo image fills the button
 new("ImageLabel", {
     Name   = "Logo", BackgroundTransparency = 1,
     Size   = UDim2.new(1, 0, 1, 0),
@@ -2329,13 +2001,11 @@ new("ImageLabel", {
     ZIndex = 201, Parent = OpenButton,
 })
 
--- Click to toggle
 OpenButton.MouseButton1Click:Connect(function()
     if windowOpen then hideWindow() else showWindow() end
 end)
 addRipple(OpenButton)
 
--- Draggable open button
 local obDragging, obDragStart, obStartPos = false, nil, nil
 OpenButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or
@@ -2361,10 +2031,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ============================================================
--- PHASE 9: KEYBIND (RightShift to toggle)
--- ============================================================
-
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.RightShift then
@@ -2372,23 +2038,17 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- ============================================================
--- PHASE 9: UPDATE UI (optimized - batched, reduced tweens)
--- ============================================================
-
 local lastUIUpdate = 0
 
 local function updateUI()
     local now = tick()
     local uptime = os.time() - State.SessionStart
 
-    -- Dashboard stats (direct text updates, no tweens)
     pcall(function() fpsValueLbl.Text = tostring(State.CurrentFPS) end)
     pcall(function() pingValueLbl.Text = State.CurrentPing .. " ms" end)
     pcall(function() memValueLbl.Text = formatMemory(State.MemoryUsage) end)
     pcall(function() uptimeValueLbl.Text = formatTime(uptime) end)
 
-    -- Session info
     pcall(function()
         local placeName = "Unknown"
         pcall(function() placeName = cloneref(game:GetService("MarketplaceService")):GetProductInfo(game.PlaceId).Name end)
@@ -2400,7 +2060,6 @@ local function updateUI()
     pcall(function() sessionFailedLbl.Text = tostring(State.FailedPings) end)
     pcall(function() sessionReconnectsLbl.Text = tostring(State.Reconnects) end)
 
-    -- TopBar status
     pcall(function()
         topStatusLabel.Text = State.CurrentStatus
         local dotColor = Theme.Success
@@ -2412,11 +2071,9 @@ local function updateUI()
         if glow then glow.BackgroundColor3 = dotColor end
     end)
 
-    -- Protection tab
     pcall(function() connPingLbl.Text = State.CurrentPing .. " ms" end)
     pcall(function() connUptimeLbl.Text = formatTime(uptime) end)
 
-    -- Performance tab (only tween progress bars every other update to reduce lag)
     local shouldTween = (now - lastUIUpdate) >= 2
     pcall(function()
         perfFpsLbl.Text = tostring(State.CurrentFPS)
@@ -2446,7 +2103,6 @@ local function updateUI()
 
     if shouldTween then lastUIUpdate = now end
 
-    -- Memory warning
     if State.MemoryUsage > Config.MemoryWarningThreshold then
         if not State._memWarned then
             State._memWarned = true
@@ -2456,10 +2112,6 @@ local function updateUI()
         State._memWarned = false
     end
 end
-
--- ============================================================
--- PHASE 9: INITIALIZATION & MAIN LOOP
--- ============================================================
 
 setupAntiKick()
 setupAntiIdle()
@@ -2484,7 +2136,6 @@ task.delay(0.5, function()
     notify("Reconnect Active", "v" .. VERSION .. " - Pro Plus", "success", 4)
 end)
 
--- Main monitoring loop
 task.spawn(function()
     while not State.StopUpdate do
         pcall(function()
@@ -2508,10 +2159,6 @@ task.spawn(function()
         task.wait(Config.UpdateInterval)
     end
 end)
-
--- ============================================================
--- PHASE 9: RETURN API
--- ============================================================
 
 return {
     show     = showWindow,
